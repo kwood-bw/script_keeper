@@ -1,0 +1,36 @@
+yaml
+---
+- name: Create a text file for all hostnames and run dig command
+  hosts: all
+  become: true  # To run commands with sudo
+  tasks:
+    - name: Create digtext.txt file
+      file:
+        path: /path/to/digtext.txt
+        state: touch
+
+    - name: Ensure digtext.txt has hostnames
+      copy:
+        content: |
+          hostname1
+          hostname2
+          hostname3
+        dest: /path/to/digtext.txt
+
+    - name: Create digscript.sh script
+      copy:
+        dest: /path/to/digscript.sh
+        content: |
+          #!/bin/bash
+          for h in $(cat /path/to/digtext.txt); do
+              printf "$h = %s\\n" $(dig +short "$h")
+          done
+      mode: '0755'  # Make the script executable
+
+    - name: Execute the digscript.sh script
+      command: /path/to/digscript.sh
+      register: dig_output
+
+    - name: Show dig results
+      debug:
+        var: dig_output.stdout
